@@ -95,6 +95,8 @@ The table has the following fields:
 The partner type and partner number are usually derived from the input data. For example, when you use the Automatic Payment report, the input data contains the ID of the vendor or customer. 
 The REQUEST and the FULL_RESPONSE contain a value in the xstring form. You can use the `ZCL_OVS_EXAMPLE=>to_xstring` method in the example class. The History of Online Checks report displays the content of the fields in a xml viewer. Although the value can have any form, SAP recommends the usage of an xml form. The XML format is used by other SAP delivered validations. 
 
+## Integration with an external API
+Althoug it is technically possible to consume an external API using the protocol of that API, it is recommended using the [Cloud Platform integration](https://help.sap.com/docs/CLOUD_INTEGRATION?version=Cloud)(CPI). It allows building a unified consumption of external services and hiding the API specific protocol in an S/4 Hana system. The CPI simplifies the integration across the landscaspes and allows to process diverse scenarios. More details on how to extend SAP-delivered CPI objects can be found [here](ExtendingIFlows.md). 
 <!--
 This info shall be published once the way how the BAdIs are called is changed. Currently it is planned for the future. 
 

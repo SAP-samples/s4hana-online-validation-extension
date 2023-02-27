@@ -1,7 +1,7 @@
 # Creating Your Own Validation
 
 ## Prerequisites
-Online Validation (OVS) is an ABAP-based service available for SAP S/4 HANA systems. You will need to implement the SAP Notes with the Online Validation or upgrade to a corresponding Support package level. The list of all available corrections is attached to the SAP Note [3085468](https://launchpad.support.sap.com/#/notes/3085468).
+Online Validation (OVS) is an ABAP-based service available for SAP S/4 HANA systems. You will need to implement the SAP Notes with the Online Validation or upgrade to a corresponding Support package level. The list of all available corrections is attached to the [3291504](https://launchpad.support.sap.com/#/notes/3291504). The overal picture of the Online Validations can be found in the SAP Note [3085468](https://launchpad.support.sap.com/#/notes/3085468).
 
 ## Preparation
 Learn about how to implement and activate a new validation in your system. 

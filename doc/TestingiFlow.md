@@ -19,6 +19,7 @@ You can copy+paste the following snippet
 </VATValReq>
  ```
 ![Athentification](img/iFlow_body.png)
+
 6.	Send the request and check the response
 You shall see `Status code 200 OK`
 The body of the response contains information about SAP Czech Republic. 
