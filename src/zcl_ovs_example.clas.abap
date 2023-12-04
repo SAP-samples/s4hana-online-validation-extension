@@ -576,6 +576,11 @@ CLASS ZCL_OVS_EXAMPLE IMPLEMENTATION.
               ls_message-type = 'S'.
             ENDIF.
 
+            IF ls_message-type = 'E'.
+              " It is not possible to directly display E messages, one solution is to change the type to Warning msg
+              ls_message-type = 'W'.
+            ENDIF.
+
             " @ todo: Add a message to the log
             " MESSAGE ID <id> TYPE ls_message-type NUMBER ls_message-number.
 
