@@ -34,10 +34,16 @@ The `IF_OVS_CHECK~VALIDATE` method performs the validation. This method has the 
 | ----------- | ----------- |
 | `iv_integration_spot` | ID of the business process from which the validation was requested. |
 | `it_data` | Data to be validated. The format of the data is different for each integration spot. |
+| `io_msg_handler` | Use this interface to display warnings/errors to the users. The SAP Note 3445278 must be implemented. See the [SAP Note 3445278](https://me.sap.com/notes/3445278) for more details. |
 
 
 > You can check method `ZCL_OVS_EXAMPLE->if_ovs_check~validate` for an example on how to use the `iv_integration_spot` parameter and related values.
 > The value of the `iv_integration_spot` determines the data for the `it_data` parameter. This class is located in this GitHub repository, not part of your SAP S/4HANA system. 
+
+Once the [SAP Note 3445278](https://me.sap.com/notes/3445278) or the corresponding feature pack is implemented, there will be no translation from the validation result to user messages. 
+You will need to adapt your code to use the new io_msg_handler parameter. 
+
+> You can use the method `ZCL_OVS_EXAMPLE->display_standard_msg` that translates a vaidation result to a message and passes this message to the `io_msg_handler`. Alternatively you can use messages from own message classes with a desired text. 
 
 ### Data Extraction for Validation
 After understanding what the `it_data` parameter is used for, you need to extract the data to be validated.

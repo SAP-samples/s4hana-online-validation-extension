@@ -52,6 +52,8 @@ IF ls_msg-type = 'E'.
 ENDIF. 		
 ```
 
+Alternatively you can use the method `ZCL_OVS_EXAMPLE->display_standard_msg` that translates a vaidation result to a message and passes this message to the `io_msg_handler`.  
+
 ### Validate Unassigned Partners
 In the Online Validation of Multiple Partners report (OVF_MASS_CHECK), it is possible to request validation of partners, that are not assigned to the selected Company codes. Although the partner selection is done in that report, the value of the parameter migth be needed during the validation. 
 ```
