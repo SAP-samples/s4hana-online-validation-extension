@@ -76,7 +76,7 @@ PRIVATE SECTION.
   "! Perform validation from the Automatic Payment Program (F110)
   "!
   "! @parameter it_data | Data to be validated.
-  "! @parameter iv_integration_spot | Always 'BP'.
+  "! @parameter iv_integration_spot | Name of the integration spot
   "! @parameter io_msg_handler | Message handler.
   "! @parameter ct_result | Validation results
   METHODS validate_payment
@@ -90,7 +90,7 @@ PRIVATE SECTION.
   "! Perform validation Post FI document (FB01, FB60 etc.)
   "!
   "! @parameter it_data | Data to be validated.
-  "! @parameter iv_integration_spot | Always 'BP'.
+  "! @parameter iv_integration_spot | Name of the integration spot
   "! @parameter io_msg_handler | Message handler.
   "! @parameter ct_result | Validation results
   METHODS validate_fi_post
@@ -104,7 +104,7 @@ PRIVATE SECTION.
   "! Perform validation Change FI document (FB02, Maintain Journal Entries Fiori app)
   "!
   "! @parameter it_data | Data to be validated.
-  "! @parameter iv_integration_spot | Always 'BP'.
+  "! @parameter iv_integration_spot | Name of the integration spot
   "! @parameter io_msg_handler | Message handler.
   "! @parameter ct_result | Validation results
   METHODS validate_fi_change
@@ -118,7 +118,8 @@ PRIVATE SECTION.
   "! Perform validation Post/Change MM document (MIRO)
   "!
   "! @parameter it_data | Data to be validated.
-  "! @parameter iv_integration_spot | Always 'BP'.
+  "! @parameter iv_integration_spot | Name of the integration spot
+  "! @parameter io_msg_handler | Message handler.
   "! @parameter ct_result | Validation results
   METHODS validate_mm
     IMPORTING
@@ -213,6 +214,12 @@ CLASS ZCL_OVS_EXAMPLE IMPLEMENTATION.
             it_integration_spot = iv_integration_spot
             CHANGING ct_result = ct_result ).
       WHEN 'MM_DOCPOST'.   "MM Document Posting
+        validate_mm(
+          EXPORTING
+            it_data = it_data
+            iv_integration_spot = iv_integration_spot
+            io_msg_handler = io_msg_handler
+            CHANGING ct_result = ct_result ).
       WHEN 'PAYMENT'.      "Payment Run
         validate_payment(
           EXPORTING
@@ -479,8 +486,11 @@ CLASS ZCL_OVS_EXAMPLE IMPLEMENTATION.
 
     " @todo: perform the validation
 
-    " Return the results. We don't need to handle the messages in MM here.
-    " Error messages are populated to the MIRO log in the MIRO exit which calls this method.
+    " Show the results as standard messages (= the text is taken from the OVS_CHECKS customizing transaction). 
+    LOOP AT lt_val_results INTO DATA(ls_result).
+      display_standard_msg( io_msg_handler = io_msg_handler iv_integration_spot = iv_integration_spot iv_val_result = ls_result-check_result ).
+    ENDLOOP.
+    
     APPEND LINES OF lt_check_results TO ct_result.
   ENDMETHOD.
 
