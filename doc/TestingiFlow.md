@@ -1,14 +1,14 @@
 # Testing your iFlow 
 This document describes testing whether the VIES relevant iFlow works as expected. If you want to test another iFlow, you will need to change the parameters of the call according to the interface of your iFlow. 
 
-1.	Download and install software that allows API testing, e.g. [Postman](https://www.postman.com/). Alternatively you can choose another tool, some alternatives are listed e.g. [here](https://testsigma.com/blog/postman-alternatives/). 
+1.	Download and install software that allows API testing, e.g. [Postman](https://www.postman.com/) or [Bruno](https://www.usebruno.com). Alternatively you can choose another tool, some alternatives are listed e.g. [here](https://testsigma.com/blog/postman-alternatives/). 
 2.	Deploy the [Integration package](https://api.sap.com/package/VATNumberValidation/overview) and configure the connection to the VIES server according to the documents in the package documentation. 
 3.	In the API testing tool, create a POST request to your iFlow. 
 The URL will be the address of your tenant + iFlow path (in the SM59 for your RFC the tenant address will be equal to the Target Host and iFlow path to the Path prefix) 
 4.	In the Authorization tab, select Basic Auth. and maintain your user and password
 ![Athentification](img/iFlow_auth.png)
 5.	In the Body tab, provide the request for validation as shown on the picture bellow. 
-You can copy+paste the following snippet 
+You can copy+paste the following snippet for testing of the VIES iFlow
 ```
 <?xml version="1.0" encoding="UTF-8"?>
 <VATValReq app="EU">
@@ -18,6 +18,17 @@ You can copy+paste the following snippet
 	</checkVatApprox>
 </VATValReq>
  ```
+The following body payload will test the Polish List of VAT Payers iFlow
+ ```
+<?xml version="1.0" encoding="UTF-8"?>
+<VATValReq app="PLWL">
+	<Req>
+		<BA>88103015080000000500754001</BA>
+		<TaxNo>9510061264</TaxNo>
+	</Req>
+</VATValReq>
+ ```
+
 ![Athentification](img/iFlow_body.png)
 
 6.	Send the request and check the response
