@@ -12,7 +12,9 @@ PRIVATE SECTION.
     GC_STCEG type abap_parmname  value 'STCEG',
     GC_STCEGS type abap_parmname  value 'STCEGS',
     GC_BP_NUM type abap_parmname  value 'BP_NUM',
-    GC_BP_TYPE type abap_parmname  value 'BP_TYPE'.
+    GC_BP_TYPE type abap_parmname  value 'BP_TYPE',
+    "! Replace by the ID of your validation
+    GC_CHECK_ID type ovs_d_checkid value 'XXXXX'.
 
   "! Perform validation from the Sales Order creation or Billing (SD module).
   "!
@@ -74,43 +76,50 @@ PRIVATE SECTION.
   "! Perform validation from the Automatic Payment Program (F110)
   "!
   "! @parameter it_data | Data to be validated.
-  "! @parameter iv_integration_spot | Always 'BP'.
+  "! @parameter iv_integration_spot | Name of the integration spot
+  "! @parameter io_msg_handler | Message handler.
   "! @parameter ct_result | Validation results
   METHODS validate_payment
     IMPORTING
       it_data TYPE abap_parmbind_tab
       iv_integration_spot TYPE ovs_d_integration_spot
+      io_msg_handler TYPE REF TO IF_OVS_MESSAGE_HANDLER
     CHANGING
       ct_result TYPE ovs_t_history.
 
   "! Perform validation Post FI document (FB01, FB60 etc.)
   "!
   "! @parameter it_data | Data to be validated.
-  "! @parameter iv_integration_spot | Always 'BP'.
+  "! @parameter iv_integration_spot | Name of the integration spot
+  "! @parameter io_msg_handler | Message handler.
   "! @parameter ct_result | Validation results
   METHODS validate_fi_post
     IMPORTING
       it_data TYPE abap_parmbind_tab
       iv_integration_spot TYPE ovs_d_integration_spot
+      io_msg_handler TYPE REF TO if_ovs_message_handler
     CHANGING
       ct_result TYPE ovs_t_history.
 
   "! Perform validation Change FI document (FB02, Maintain Journal Entries Fiori app)
   "!
   "! @parameter it_data | Data to be validated.
-  "! @parameter iv_integration_spot | Always 'BP'.
+  "! @parameter iv_integration_spot | Name of the integration spot
+  "! @parameter io_msg_handler | Message handler.
   "! @parameter ct_result | Validation results
   METHODS validate_fi_change
     IMPORTING
       it_data TYPE abap_parmbind_tab
       iv_integration_spot TYPE ovs_d_integration_spot
+      io_msg_handler TYPE REF TO if_ovs_message_handler
     CHANGING
       ct_result TYPE ovs_t_history.
 
   "! Perform validation Post/Change MM document (MIRO)
   "!
   "! @parameter it_data | Data to be validated.
-  "! @parameter iv_integration_spot | Always 'BP'.
+  "! @parameter iv_integration_spot | Name of the integration spot
+  "! @parameter io_msg_handler | Message handler.
   "! @parameter ct_result | Validation results
   METHODS validate_mm
     IMPORTING
@@ -118,18 +127,30 @@ PRIVATE SECTION.
       iv_integration_spot TYPE ovs_d_integration_spot
     CHANGING
       ct_result TYPE ovs_t_history.
-      
-  "! Check, whether the user requested to validate parnters not assigned to selected company code. 
+
+  "! Check, whether the user requested to validate parnters not assigned to selected company code.
   "! This flag is supported in the Mass Check report only. The proper checkbox must be is selected.
   "! Although the selection of partners has been done by the Mass Check report, the parameter
-  "! might be needed here.   
+  "! might be needed here.
   "!
   "! @parameter it_data | Data to be validated.
-  "! @parameter rv_result | True if the user requested to validate unassigned partners. 
+  "! @parameter rv_result | True if the user requested to validate unassigned partners.
   CLASS-METHODS is_validate_all_requested
     IMPORTING
       it_data TYPE abap_parmbind_tab
-    RETURNING VALUE(rv_result) type abap_bool. 
+    RETURNING VALUE(rv_result) type abap_bool.
+
+
+  "! Use this method if you don't require a more specific message.
+  "! The user will see the text that is maintained in the customizing (transaction OVS_CHECKS) and associated with the actual validation result.
+  "!
+  "! @parameter io_msg_handler | Massage handler instace (passed to the main method validation).
+  "! @parameter iv_val_result | Thye result code of the validation.
+  "! @parameter iv_integration_spot | Integration spot (passed to the main method validation).
+  CLASS-METHODS display_standard_msg
+    IMPORTING io_msg_handler TYPE REF TO IF_OVS_MESSAGE_HANDLER
+              iv_val_result TYPE ovs_d_checkresult
+              iv_integration_spot TYPE ovs_d_integration_spot.
 ENDCLASS.
 
 
@@ -162,6 +183,7 @@ CLASS ZCL_OVS_EXAMPLE IMPLEMENTATION.
   METHOD IF_OVS_CHECK~VALIDATE.
   " @todo: As this class is just an example from https://github.com/SAP-samples/s4hana-online-validation-extension
   " Let it dump by default. Manual adaptation is needed. Check the GitHub page for more details.
+  " DON'T forget to updfate the value of the GC_CHECK_ID attribute
    MESSAGE 'Validation not implemented' type 'X'.
 
     CASE iv_integration_spot.
@@ -183,6 +205,7 @@ CLASS ZCL_OVS_EXAMPLE IMPLEMENTATION.
           EXPORTING
             it_data = it_data
             iv_integration_spot = iv_integration_spot
+            io_msg_handler = io_msg_handler
             CHANGING ct_result = ct_result ).
       WHEN 'MASS_CHECK'.   "Partners Mass Check Report
         validate_mass_check(
@@ -191,11 +214,18 @@ CLASS ZCL_OVS_EXAMPLE IMPLEMENTATION.
             it_integration_spot = iv_integration_spot
             CHANGING ct_result = ct_result ).
       WHEN 'MM_DOCPOST'.   "MM Document Posting
+        validate_mm(
+          EXPORTING
+            it_data = it_data
+            iv_integration_spot = iv_integration_spot
+            io_msg_handler = io_msg_handler
+            CHANGING ct_result = ct_result ).
       WHEN 'PAYMENT'.      "Payment Run
         validate_payment(
           EXPORTING
             it_data = it_data
             iv_integration_spot = iv_integration_spot
+            io_msg_handler = io_msg_handler
             CHANGING ct_result = ct_result ).
     ENDCASE.
   ENDMETHOD.
@@ -332,14 +362,7 @@ CLASS ZCL_OVS_EXAMPLE IMPLEMENTATION.
     IF <origin> <> if_ovf_ovs_types=>gc_origin_change_fiori.
       LOOP AT lt_check_results INTO ls_check_result.
         CLEAR ls_msg.
-        ls_msg = cl_ovs_services=>get_message(
-            iv_check_id         = ls_check_result-check_id
-            iv_check_result     = ls_check_result-check_result
-            iv_integration_spot = iv_integration_spot ).
-        CHECK ls_msg IS NOT INITIAL.
-        CHECK ls_msg-type = 'E' OR ls_msg-type = 'W'. "Information message is ignored, e.g. Valid
-*         Show Message
-        "MESSAGE ID <msg_class> TYPE ls_msg-type NUMBER <no> WITH ...
+        display_standard_msg( io_msg_handler = io_msg_handler iv_integration_spot = iv_integration_spot iv_val_result = ls_check_result-check_result ).
       ENDLOOP.
     ENDIF.
     " Return the results
@@ -386,15 +409,7 @@ CLASS ZCL_OVS_EXAMPLE IMPLEMENTATION.
 
     " Check the results
     LOOP AT lt_val_results INTO DATA(ls_result).
-      " Read the message for the user from the customizing
-      DATA(ls_msg) = cl_ovs_services=>get_message(
-          iv_check_id         = cl_fipl_lvp=>mc_checkid_lvp
-          iv_check_result     = ls_result-check_result
-          iv_integration_spot = iv_integration_spot ).
-      CHECK ls_msg IS NOT INITIAL.
-      CHECK ls_msg-type <> 'I'. "Information mesage is ignored, e.g. Valid
-      " Show Message
-      " @totdo MESSAGE ID <msg_class> TYPE ls_msg-type NUMBER <msg_num>...
+      display_standard_msg( io_msg_handler = io_msg_handler iv_integration_spot = iv_integration_spot iv_val_result = ls_result-check_result ).
     ENDLOOP.
 
     " Return the results
@@ -426,8 +441,8 @@ CLASS ZCL_OVS_EXAMPLE IMPLEMENTATION.
 
     " True if a fresh validation is requested by the user. Otherwise, a previous result from the OVF_HISTORY can be returned.
     DATA(bypass_buffer) = cl_ovs_services=>is_online_validation_required( data = it_data ).
-    
-    " True if the user request validation of partners not assigned to the selected Company Code. 
+
+    " True if the user request validation of partners not assigned to the selected Company Code.
     DATA(validate_unnasigned_partners) = is_validate_all_requested( it_data = it_data ).
 
     " Here you can implement the validation and collect the results to the lt_validation_results
@@ -471,8 +486,11 @@ CLASS ZCL_OVS_EXAMPLE IMPLEMENTATION.
 
     " @todo: perform the validation
 
-    " Return the results. We don't need to handle the messages in MM here.
-    " Error messages are populated to the MIRO log in the MIRO exit which calls this method.
+    " Show the results as standard messages (= the text is taken from the OVS_CHECKS customizing transaction). 
+    LOOP AT lt_val_results INTO DATA(ls_result).
+      display_standard_msg( io_msg_handler = io_msg_handler iv_integration_spot = iv_integration_spot iv_val_result = ls_result-check_result ).
+    ENDLOOP.
+    
     APPEND LINES OF lt_check_results TO ct_result.
   ENDMETHOD.
 
@@ -581,8 +599,8 @@ CLASS ZCL_OVS_EXAMPLE IMPLEMENTATION.
               ls_message-type = 'W'.
             ENDIF.
 
-            " @ todo: Add a message to the log
-            " MESSAGE ID <id> TYPE ls_message-type NUMBER ls_message-number.
+            " Add a message to the log
+            io_msg_handler->log_message( ls_message ).
 
         ENDIF.
       ENDLOOP.
@@ -592,15 +610,21 @@ CLASS ZCL_OVS_EXAMPLE IMPLEMENTATION.
     APPEND LINES OF lt_val_results TO ct_result.
 
   ENDMETHOD.
-  
+
   METHOD is_validate_all_requested.
     FIELD-SYMBOLS <validate_all> TYPE abap_bool.
-    
-    CLEAR rv_result.  
+
+    CLEAR rv_result.
     READ TABLE it_data WITH KEY name = 'VALIDATE_ALL'  kind = cl_abap_objectdescr=>importing ASSIGNING FIELD-SYMBOL(<is_par>).
     CHECK sy-subrc = 0.
     ASSIGN <is_par>-value->* TO <validate_all>.
     rv_result = <validate_all>.
   ENDMETHOD.
 
+  METHOD display_standard_msg.
+    DATA(lv_msg) = cl_ovs_services=>get_message( iv_check_id = gc_check_id iv_check_result = iv_val_result iv_integration_spot = iv_integration_spot  ).
+    IF lv_msg IS NOT INITIAL.
+      io_msg_handler->log_message( iv_msg = lv_msg ).
+    ENDIF.
+  ENDMETHOD.
 ENDCLASS.
